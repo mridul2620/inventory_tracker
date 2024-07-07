@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RFID Tag Reader</title>
+<link rel="stylesheet" href="/styles.css">
+<script>
+function formatTimestampTo12Hour(timestamp) {
+    const date = new Date(timestamp);
+    const options = {
+        timeZone: 'Europe/London',
+        hour12: true,
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric'
+    };
+    const formatter = new Intl.DateTimeFormat('en-GB', options);
+    return formatter.format(date);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll('.timestamp').forEach(elem => {
+        elem.textContent = formatTimestampTo12Hour(elem.getAttribute('data-timestamp'));
+    });
+});
+
+setInterval(() => { location.reload(); }, 5000);
+
+function clearData(antenna) {
+    fetch('/clear-data', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ antenna })
+    }).then(() => {
+        location.reload();
+    });
+}
+</script>
+</head>
+<body>
+<header>
+<h1>Inventory Tracker</h1>
+</header>
+<div class="container">
+<%
+function aggregateDataByAntenna(webhookDataList, antennaNumber) {
+    const aggregatedData = {};
+    webhookDataList
+        .filter(data => data.data.antenna === antennaNumber && data.data.idHex.startsWith('e2'))
+        .forEach(data => {
+            const idHex = data.data.idHex;
+            if (!aggregatedData[idHex]) {
+                aggregatedData[idHex] = { ...data.data, timestamp: data.timestamp };
+            } else {
+                aggregatedData[idHex].reads += data.data.reads;
+                if (new Date(data.timestamp) > new Date(aggregatedData[idHex].timestamp)) {
+                    aggregatedData[idHex].timestamp = data.timestamp;
+                    aggregatedData[idHex].peakRssi = data.data.peakRssi;
+                }
+            }
+        });
+    return Object.values(aggregatedData)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+const idHexToModuleMap = {
+    'e280117000000216fc223db1': { moduleName: '23J04-40061', lifeNo: 'LN-1234' },
+    'e280117000000216fc2244bf': { moduleName: '23J04-40179', lifeNo: 'LN-5678' },
+    'e280117000000216fc2244bd': { moduleName: '23J04-40245', lifeNo: 'LN-9101' },
+    'e280117000000216fc223db7': { moduleName: '2022-C05-0331', lifeNo: 'LN-1121' },
+    'e280117000000213d1e994b2': { moduleName: '2022-C05-0332', lifeNo: 'LN-3141' },
+    'e280117000000216fc2245b5': { moduleName: '2022-C05-0333', lifeNo: 'LN-5161' },
+    'e280117000000216fc2245b4': { moduleName: '2022-C05-0334', lifeNo: 'LN-7181' }
+};
+
+function getModuleName(idHex) {
+    return idHexToModuleMap[idHex]?.moduleName || idHex;
+}
+
+function getLifeNo(idHex) {
+    return idHexToModuleMap[idHex]?.lifeNo || 'N/A';
+}
+
+const inventory1Data = aggregateDataByAntenna(webhookDataList, 1);
+const inventory2Data = aggregateDataByAntenna(webhookDataList, 2);
+const buildAreaData = aggregateDataByAntenna(webhookDataList, 3);
+%>
+<section class="section">
+<h2>Inventory-1</h2>
+<table>
+<thead>
+<tr><th>Tag ID</th><th>Life No</th><th>RSSI</th><th>Reads</th><th>Last Read Time</th></tr>
+</thead>
+<tbody>
+<% 
+inventory1Data.forEach(data => { 
+    const moduleName = getModuleName(data.idHex);
+    const lifeNo = getLifeNo(data.idHex);
+%>
+    <tr>
+        <td><%= moduleName %></td>
+        <td><%= lifeNo %></td>
+        <td><%= data.peakRssi %></td>
+        <td><%= data.reads %></td>
+        <td class="timestamp" data-timestamp="<%= data.timestamp %>"></td>
+    </tr>
+<% }); %>
+</tbody>
+</table>
+<button onclick="clearData(1)">Clear</button>
+</section>
+<section class="section">
+<h2>Inventory-2</h2>
+<table>
+<thead>
+<tr><th>Tag ID</th><th>Life No</th><th>RSSI</th><th>Reads</th><th>Last Read Time</th></tr>
+</thead>
+<tbody>
+<% 
+inventory2Data.forEach(data => {
+    const moduleName = getModuleName(data.idHex);
+    const lifeNo = getLifeNo(data.idHex);
+%>
+    <tr>
+        <td><%= moduleName %></td>
+        <td><%= lifeNo %></td>
+        <td><%= data.peakRssi %></td>
+        <td><%= data.reads %></td>
+        <td class="timestamp" data-timestamp="<%= data.timestamp %>"></td>
+    </tr>
+<% }); %>
+</tbody>
+</table>
+<button onclick="clearData(2)">Clear</button>
+</section>
+<section class="section">
+<h2>Build Area</h2>
+<table>
+<thead>
+<tr><th>Tag ID</th><th>Life No</th><th>RSSI</th><th>Reads</th><th>Last Read Time</th></tr>
+</thead>
+<tbody>
+<% 
+buildAreaData.forEach(data => {
+    const moduleName = getModuleName(data.idHex);
+    const lifeNo = getLifeNo(data.idHex);
+%>
+    <tr>
+        <td><%= moduleName %></td>
+        <td><%= lifeNo %></td>
+        <td><%= data.peakRssi %></td>
+        <td><%= data.reads %></td>
+        <td class="timestamp" data-timestamp="<%= data.timestamp %>"></td>
+    </tr>
+<% }); %>
+</tbody>
+</table>
+<button onclick="clearData(3)">Clear</button>
+</section>
+</div>
+</body>
+</html>
