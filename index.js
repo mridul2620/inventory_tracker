@@ -14,6 +14,10 @@ app.use(express.static("public"));
 
 let webhookDataList = [];
 
+app.get("/", (req, res) => {
+  res.redirect("http://pdsl.com");
+});
+
 // Endpoint to receive webhook POST requests
 app.post("/webhook", (req, res) => {
   const webhookData = req.body;
