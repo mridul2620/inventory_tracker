@@ -136,8 +136,8 @@ button:hover {
     }
 
     button {
-        padding: 8px 18px;
-        font-size: 0.95em;
+        padding: 8px 12px;
+        font-size: 14px;
     }
 }
 
@@ -153,8 +153,8 @@ button:hover {
     }
 
     button {
-        padding: 12px 24px;
-        font-size: 1.1em;
+        padding: 8px 12px;
+        font-size: 14px;
     }
 }
 
@@ -169,8 +169,8 @@ button:hover {
     }
 
     button {
-        padding: 14px 28px;
-        font-size: 1.2em;
+        padding: 8px 12px;
+        font-size: 14px;
     }
     
 }
@@ -186,8 +186,8 @@ button:hover {
     }
 
     button {
-        padding: 16px 32px;
-        font-size: 1.3em;
+        padding: 8px 12px;
+        font-size: 14px;
     }
     
 }
