@@ -59,26 +59,6 @@ const idHexToModuleMap = {
     'e280117000000216fc2245b4': { moduleName: '2022-C05-0334', lifeNo: '12' }
 };
 
-function aggregateDataByAntenna(webhookDataList, antennaNumber) {
-    const aggregatedData = {};
-    webhookDataList
-        .filter(data => data.data.antenna === antennaNumber && idHexToModuleMap.hasOwnProperty(data.data.idHex))
-        .forEach(data => {
-            const idHex = data.data.idHex;
-            if (!aggregatedData[idHex]) {
-                aggregatedData[idHex] = { ...data.data, timestamp: data.timestamp };
-            } else {
-                aggregatedData[idHex].reads += data.data.reads;
-                if (new Date(data.timestamp) > new Date(aggregatedData[idHex].timestamp)) {
-                    aggregatedData[idHex].timestamp = data.timestamp;
-                    aggregatedData[idHex].peakRssi = data.data.peakRssi;
-                }
-            }
-        });
-    return Object.values(aggregatedData)
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-}
-
 function getModuleName(idHex) {
     return idHexToModuleMap[idHex]?.moduleName || idHex;
 }
@@ -90,8 +70,10 @@ function getLifeNo(idHex) {
 const aggregatedData = {};
 webhookDataList.forEach(data => {
     const idHex = data.data.idHex;
-    if (!aggregatedData[idHex] || new Date(data.timestamp) > new Date(aggregatedData[idHex].timestamp)) {
-        aggregatedData[idHex] = { ...data.data, timestamp: data.timestamp };
+    if (idHexToModuleMap.hasOwnProperty(idHex)) {
+        if (!aggregatedData[idHex] || new Date(data.timestamp) > new Date(aggregatedData[idHex].timestamp)) {
+            aggregatedData[idHex] = { ...data.data, timestamp: data.timestamp };
+        }
     }
 });
 
