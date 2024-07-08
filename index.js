@@ -13,6 +13,15 @@ app.set("view engine", "ejs");
 app.use(express.static("public"));
 
 let webhookDataList = [];
+const idHexToModuleMap = {
+  'e280117000000216fc223db1': { moduleName: '23J04-40061', lifeNo: '111-112' },
+  'e280117000000216fc2244bf': { moduleName: '23J04-40179', lifeNo: '113-114' },
+  'e280117000000216fc2244bd': { moduleName: '23J04-40245', lifeNo: '105-106' },
+  'e280117000000216fc223db7': { moduleName: '2022-C05-0331', lifeNo: '11' },
+  'e280117000000213d1e994b2': { moduleName: '2022-C05-0332', lifeNo: '9' },
+  'e280117000000216fc2245b5': { moduleName: '2022-C05-0333', lifeNo: '4' },
+  'e280117000000216fc2245b4': { moduleName: '2022-C05-0334', lifeNo: '12' }
+};
 
 app.get("/", (req, res) => {
   res.redirect("http://pdsl.com");

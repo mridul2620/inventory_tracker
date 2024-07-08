@@ -49,10 +49,20 @@ function clearData(antenna) {
 </header>
 <div class="container">
 <%
+const idHexToModuleMap = {
+    'e280117000000216fc223db1': { moduleName: '23J04-40061', lifeNo: '111-112' },
+    'e280117000000216fc2244bf': { moduleName: '23J04-40179', lifeNo: '113-114' },
+    'e280117000000216fc2244bd': { moduleName: '23J04-40245', lifeNo: '105-106' },
+    'e280117000000216fc223db7': { moduleName: '2022-C05-0331', lifeNo: '11' },
+    'e280117000000213d1e994b2': { moduleName: '2022-C05-0332', lifeNo: '9' },
+    'e280117000000216fc2245b5': { moduleName: '2022-C05-0333', lifeNo: '4' },
+    'e280117000000216fc2245b4': { moduleName: '2022-C05-0334', lifeNo: '12' }
+};
+
 function aggregateDataByAntenna(webhookDataList, antennaNumber) {
     const aggregatedData = {};
     webhookDataList
-        .filter(data => data.data.antenna === antennaNumber && data.data.idHex.startsWith('e2'))
+        .filter(data => data.data.antenna === antennaNumber && idHexToModuleMap.hasOwnProperty(data.data.idHex))
         .forEach(data => {
             const idHex = data.data.idHex;
             if (!aggregatedData[idHex]) {
@@ -69,16 +79,6 @@ function aggregateDataByAntenna(webhookDataList, antennaNumber) {
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
-const idHexToModuleMap = {
-    'e280117000000216fc223db1': { moduleName: '23J04-40061', lifeNo: 'LN-1234' },
-    'e280117000000216fc2244bf': { moduleName: '23J04-40179', lifeNo: 'LN-5678' },
-    'e280117000000216fc2244bd': { moduleName: '23J04-40245', lifeNo: 'LN-9101' },
-    'e280117000000216fc223db7': { moduleName: '2022-C05-0331', lifeNo: 'LN-1121' },
-    'e280117000000213d1e994b2': { moduleName: '2022-C05-0332', lifeNo: 'LN-3141' },
-    'e280117000000216fc2245b5': { moduleName: '2022-C05-0333', lifeNo: 'LN-5161' },
-    'e280117000000216fc2245b4': { moduleName: '2022-C05-0334', lifeNo: 'LN-7181' }
-};
-
 function getModuleName(idHex) {
     return idHexToModuleMap[idHex]?.moduleName || idHex;
 }
@@ -87,9 +87,27 @@ function getLifeNo(idHex) {
     return idHexToModuleMap[idHex]?.lifeNo || 'N/A';
 }
 
-const inventory1Data = aggregateDataByAntenna(webhookDataList, 1);
-const inventory2Data = aggregateDataByAntenna(webhookDataList, 2);
-const buildAreaData = aggregateDataByAntenna(webhookDataList, 3);
+const aggregatedData = {};
+webhookDataList.forEach(data => {
+    const idHex = data.data.idHex;
+    if (!aggregatedData[idHex] || new Date(data.timestamp) > new Date(aggregatedData[idHex].timestamp)) {
+        aggregatedData[idHex] = { ...data.data, timestamp: data.timestamp };
+    }
+});
+
+const inventory1Data = [];
+const inventory2Data = [];
+const buildAreaData = [];
+
+Object.values(aggregatedData).forEach(data => {
+    if (data.antenna === 1) {
+        inventory1Data.push(data);
+    } else if (data.antenna === 2) {
+        inventory2Data.push(data);
+    } else if (data.antenna === 3) {
+        buildAreaData.push(data);
+    }
+});
 %>
 <section class="section">
 <h2>Inventory-1</h2>
